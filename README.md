@@ -36,7 +36,7 @@ Options:
 
     Specify a file path to load the engines from.
     
-    The following shows example content of a engine file:
+    The following shows example content of an engine file:
     
         google https://www.google.com/search?q=
         github https://github.com/search?q=
