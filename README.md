@@ -5,7 +5,7 @@ dmenu script for searching the web with customizable search engines.
 
 ![dmenu-search screenshot 2](doc/dmenu-search-2.png)
 
-Requirements:
+Runtime Dependencies:
 [dmenu](http://tools.suckless.org/dmenu/) or
 [dmenu2](https://bitbucket.org/melek/dmenu2).
 
