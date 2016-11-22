@@ -18,7 +18,7 @@ Usage:
 *   `dmenu-search [OPTIONS]`
 
     Let's the user choose a search engine and enter a search string by
-    spawning two subsequent `dmenu` processes, and open the resulting
+    spawning two subsequent `dmenu` processes, and opens the resulting
     URL in a browser.
 
 Options:
