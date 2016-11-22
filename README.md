@@ -17,7 +17,9 @@ Usage:
 
 *   `dmenu-search [OPTIONS]`
 
-    Spawns a dmenu process to let the user select processes to kill with `kill -9`.
+    Let's the user choose a search engine and enter a search string by
+    spawning two subsequent `dmenu` processes, and open the resulting
+    URL in a browser.
 
 Options:
 
