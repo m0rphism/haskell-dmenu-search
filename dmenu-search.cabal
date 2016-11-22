@@ -50,4 +50,4 @@ executable dmenu-search
 
 source-repository head
   type: git
-  location: https://github.com/m0rphism/haskell-dmenu-pmount.git
+  location: https://github.com/m0rphism/haskell-dmenu-search.git
