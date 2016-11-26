@@ -28,20 +28,25 @@ Options:
 *   `-b, --browser CMD`
 
     Shell command to open url in browser. Default: `chromium -new-window`
+
 *   `-e, --engine NAME URLPREFIX`
 
-    Specify a list of search engines, e.g.
+    Add a search engine, e.g.
     
         -e google https://www.google.com/search?q=
         -e github https://github.com/search?q=
+
 *   `-E, --engine-file PATH`
 
-    Specify a file path to load the engines from.
+    Add search engines from a file.
     
     The following shows example content of an engine file:
     
-        google https://www.google.com/search?q=
-        github https://github.com/search?q=
+        google
+        https://www.google.com/search?q=
+
+        github
+        https://github.com/search?q=
 
 The application is build with the
 [dmenu Haskell bindings](https://hackage.haskell.org/package/dmenu), which

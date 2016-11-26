@@ -1,45 +1,109 @@
-{-# LANGUAGE UnicodeSyntax, LambdaCase #-}
+{-# LANGUAGE UnicodeSyntax, LambdaCase, FlexibleContexts, TemplateHaskell #-}
 
 import Control.Lens
+import Control.Monad.IO.Class
+import Control.Monad.State.Strict
+import Data.List (isPrefixOf)
+import System.Environment
+import System.Exit
 import System.Process
-
 import qualified DMenu
 
-templates :: [ (String, String) ]
-templates =
-  [ ("https://www.google.com/search?q=", "google")
-  , ("https://www.haskell.org/hoogle/?hoogle=", "hoogle")
-  , ("https://en.wikipedia.org/wiki/Special:Search?search=", "wikipedia (english)")
-  , ("https://de.wikipedia.org/w/index.php?search=", "wikipedia (german)")
-  , ("http://en.cppreference.com/mwiki/index.php?title=Special:Search&search=", "cppreference")
-  , ("https://duckduckgo.com/?q=", "duckduckgo")
-  , ("http://fddb.info/db/de/suche/?udd=0&cat=site-de&search=", "fddb")
-  , ("https://github.com/search?q=", "github")
-  , ("https://scholar.google.de/scholar?hl=en&q=", "scholar")
-  , ("http://translate.google.com/?source=osdd#auto|auto|%s", "translate")
-  , ("https://hackage.haskell.org/packages/search?terms=", "hackage")
-  , ("http://hayoo.fh-wedel.de/?query=", "hayoo")
-  , ("https://ixquick.com/do/dsearch?query=", "ixquick")
-  , ("http://dict.leo.org/ende?lang=de&search=", "leo")
-  , ("https://nixos.org/w/index.php?search=", "nixos wiki")
-  , ("http://stackoverflow.com/search?q=", "stackoverflow")
-  , ("http://stackexchange.com/search?q=", "stackexchange")
-  , ("https://www.startpage.com/do/dsearch?query=", "startpage")
-  , ("http://thepiratebay.org/search/", "thepiratebay")
-  , ("https://twitter.com/search?q=", "twitter")
-  , ("http://watchseries.ag/search/", "watchseries")
-  , ("http://www.wolframalpha.com/input/?i=", "wolframalpha")
-  , ("http://www.youtube.com/results?search_query=", "youtube")
-  ]
+data Opts = Opts
+  { _optsBrowser :: String
+  , _optsEngines :: [(String, String)] -- ^ [(EngineName, EngineURLPrefix)]
+  }
 
-browserCmd :: String
-browserCmd = "chromium -new-window"
+makeLenses ''Opts
+
+pairs :: [a] → Either String [(a, a)]
+pairs = \case
+  []     → Right []
+  x:y:xs → ((x,y):) <$> pairs xs
+  _      → Left "Found search engine name without URL prefix."
+
+parseEngines :: String -> Either String [(String, String)]
+parseEngines es = pairs relevantLines
+ where
+  isEmptyLine = all (`elem` [' ', '\t'])
+  relevantLines = filter (not . isEmptyLine) (lines es)
+
+-- | Parse the command line arguments
+readArgs
+  :: [String] -- ^ Arguments from 'getArgs'
+  -> IO Opts
+readArgs args =
+  execStateT (go $ words $ unwords args) (Opts "chromium -new-window" [])
+ where
+  go []
+    = pure ()
+  go (a:as)
+    | a == "--"
+    = pure () -- All arguments after "--" are passed to dmenu later.
+    | a `elem` ["-b", "--browser"]
+    , browser : as' ← as
+    = do optsBrowser .= browser; go as'
+    | a `elem` ["-e", "--engine"]
+    , (name : urlPrefix : as') ← as
+    = do optsEngines %= (++[(name, urlPrefix)]); go as'
+    | a `elem` ["-E", "--engine-file"]
+    , (filePath : as') ← as
+    = liftIO (parseEngines <$> readFile filePath) >>= \case
+        Left err → liftIO $ putStrLn $ "Failed to parse config file `"
+                                    ++ filePath ++ "`: " ++ err
+        Right es → do optsEngines %= (++es); go as'
+    | a `elem` ["-h", "--help"]
+    = liftIO $ do putStrLn usage; exitFailure
+    | a == ""
+    = go as
+  go _
+    = liftIO $ do putStrLn usage; exitFailure
 
 main :: IO ()
 main = do
-  DMenu.selectWith (DMenu.prompt .= "search with") snd templates >>= \case
-    Right (template, _) →
-      DMenu.select (DMenu.prompt .= "search for") [] >>= \case
-        Right query → callCommand $ browserCmd ++ " " ++ show (template ++ query)
+  opts ← readArgs =<< getArgs
+  let cfg1 = do DMenu.prompt .= "search with"; DMenu.forwardExtraArgs
+  let cfg2 = do DMenu.prompt .= "search for"; DMenu.forwardExtraArgs
+  DMenu.selectWith cfg1 fst (opts^.optsEngines) >>= \case
+    Right (_, urlPrefix) →
+      DMenu.select cfg2 [] >>= \case
+        Right query →
+          callCommand $ (opts^.optsBrowser) ++ " " ++ show (urlPrefix ++ query)
         _→ pure ()
     _ → pure ()
+
+usage :: String
+usage = unlines
+  [ "Usage:"
+  , "  dmenu-search [OPTIONS] [-- DMENUOPTIONS]"
+  , ""
+  , "  Let's the user choose a search engine and enter a search string by"
+  , "  spawning two subsequent dmenu processes, and opens the resulting"
+  , "  URL in a browser."
+  , ""
+  , "  All arguments, after the first `--` argument, are directly passed to dmenu."
+  , ""
+  , "Options:"
+  , "  -b, --browser CMD"
+  , "    Shell command to open url in browser. Default: `chromium -new-window`"
+  , ""
+  , "  -e, --engine NAME URLPREFIX"
+  , "    Add a search engine, e.g."
+  , ""
+  , "        -e google https://www.google.com/search?q="
+  , "        -e github https://github.com/search?q="
+  , ""
+  , "  -E, --engine-file PATH"
+  , "    Add search engines from a file."
+  , ""
+  , "    The following shows example content of an engine file:"
+  , ""
+  , "        google"
+  , "        https://www.google.com/search?q="
+  , ""
+  , "        github"
+  , "        https://github.com/search?q="
+  , ""
+  , "  -h, --help"
+  , "    Display this message."
+  ]
