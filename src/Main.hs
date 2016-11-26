@@ -3,7 +3,6 @@
 import Control.Lens
 import Control.Monad.IO.Class
 import Control.Monad.State.Strict
-import Data.List (isPrefixOf)
 import System.Environment
 import System.Exit
 import System.Process
