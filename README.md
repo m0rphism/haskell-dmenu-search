@@ -15,11 +15,13 @@ Installation:
 
 Usage:
 
-*   `dmenu-search [OPTIONS]`
+*   `dmenu-search [OPTIONS] [-- DMENUOPTIONS]`
 
     Let's the user choose a search engine and enter a search string by
     spawning two subsequent `dmenu` processes, and opens the resulting
     URL in a browser.
+    
+    All arguments, after the first `--` argument, are directly passed to `dmenu`.
 
 Options:
 
@@ -43,4 +45,4 @@ Options:
 
 The application is build with the
 [dmenu Haskell bindings](https://hackage.haskell.org/package/dmenu), which
-support customizing the dmenu commandline options in a configuration file.
+support customizing the dmenu commandline options in a [configuration file](https://github.com/m0rphism/haskell-dmenu/blob/master/CONFIG.md).
