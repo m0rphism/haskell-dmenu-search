@@ -74,7 +74,7 @@ main = do
 
 usage :: String
 usage = unlines
-  [ "Usage:"
+  [ "USAGE"
   , "  dmenu-search [OPTIONS] [-- DMENUOPTIONS]"
   , ""
   , "  Let's the user choose a search engine and enter a search string by"
@@ -83,7 +83,7 @@ usage = unlines
   , ""
   , "  All arguments, after the first `--` argument, are directly passed to dmenu."
   , ""
-  , "Options:"
+  , "OPTIONS"
   , "  -b, --browser CMD"
   , "    Shell command to open url in browser. Default: `chromium -new-window`"
   , ""
